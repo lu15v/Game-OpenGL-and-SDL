@@ -8,6 +8,13 @@
 #include "functions.h"
 #include <string>
 
+struct Brick
+{
+ float x;
+ float y;
+ float width;
+ float height;
+};
 
 int main (int argc, char* args[])
 {
@@ -40,6 +47,24 @@ int main (int argc, char* args[])
 
     bool left = false, right = false;
 
+    //Brick elements
+    const static int BRICKS = 36; //global quantity of the bricks
+
+    Brick bricks[BRICKS];
+
+
+    for (int i = 0, x = 4, y = 10; i < BRICKS; i++, x+= 66){
+
+        //for accommodate the bricks
+        if(x > 560){
+            x = 4;
+            y += 25;
+        }
+        bricks[i].x = x;
+        bricks[i].y = y;
+        bricks[i].width = 60;
+        bricks[i].height = 20;
+    }
 
     while (running)
     {
@@ -123,6 +148,19 @@ int main (int argc, char* args[])
         drawingSquares(myX, myY, width, height, 0, 0, 0, 255); //bar created
 
         drawingSquares(ballX, ballY, ballWH, ballWH, 255, 0, 0, 255); //ball created
+
+
+        for(int i = 0; i < BRICKS; i++){
+
+            if(i < 9)
+                drawingSquares(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 0, 0, 255, 255);
+            else if (i < 18)
+              drawingSquares(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 255, 0, 0, 255);
+            else if (i < 27)
+             drawingSquares(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 255, 165, 0, 0);
+            else
+             drawingSquares(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 242, 234, 5, 0);
+        }
         /* return to the screen */
         glPopMatrix();
         /* render */
