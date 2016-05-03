@@ -1,0 +1,6 @@
+# depslib dependency file v1.0
+1462266180 source:c:\users\lu15\documents\itesm\graficas\gameproject\main.cpp
+	"SDL.h"
+	"SDL_opengl.h"
+	<iostream>
+
