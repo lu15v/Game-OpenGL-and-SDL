@@ -1,12 +1,13 @@
 
 /*
--lmingw32 -lSDLmain -lSDL -lopengl32 -lglu32
+-lmingw32 -lSDLmain -lSDL -lopengl32 - -lSDL_image
 */
 #include "SDL.h"
 #include "SDL_opengl.h"
 #include <iostream>
 #include "functions.h"
 #include <string>
+#include "SDL_image.h"
 
 struct Brick
 {
@@ -14,7 +15,44 @@ struct Brick
  float y;
  float width;
  float height;
+ bool isHit;
 };
+
+GLuint loadTexture(const std::string &fileName){
+    /* load image into sdl surface */
+    /*filename.c_str converts to string the file name */
+
+    SDL_Surface *image = IMG_Load(fileName.c_str() );
+
+    /*display format */
+
+    SDL_DisplayFormatAlpha(image);
+
+    /*texture */
+    unsigned object(0);
+
+
+    glGenTextures(1, &object);
+
+    glBindTexture(GL_TEXTURE_2D, object);
+
+    //create texture sdl surface (how the texture will behave)
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    /*creation of the texture sdl surface */
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image->w, image ->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image->pixels);
+
+    /*free surface */
+    SDL_FreeSurface(image);
+
+    return object;
+}
+
 
 int main (int argc, char* args[])
 {
@@ -38,15 +76,14 @@ int main (int argc, char* args[])
 
     /* the ball variables */
 
-    float ballX = 50;
-    float ballY = 50;
+    float ballX = 420;
+    float ballY = 300;
     float ballWH = 25;
 
-    float velX = 0.08;
-    float velY = 0.08;
+    float velX = 0.06;
+    float velY = -0.06;
 
     bool left = false, right = false;
-
     //Brick elements
     const static int BRICKS = 36; //global quantity of the bricks
 
@@ -64,8 +101,18 @@ int main (int argc, char* args[])
         bricks[i].y = y;
         bricks[i].width = 60;
         bricks[i].height = 20;
+        bricks[i].isHit = false;
     }
 
+    /*load the image 60 40  verify to add the alpha channel*/
+/*
+    unsigned int pad_texture = 0;
+    pad_texture = loadTexture("bar.png");
+
+    std::cout << pad_texture << std::endl;
+
+*/
+    /* main loop */
     while (running)
     {
         /* takes events for the event stack */
@@ -115,7 +162,33 @@ int main (int argc, char* args[])
 
         //ball logic
         ballX += velX;
-        ballY += velY;
+
+
+        for(int i = 0; i < BRICKS; i++){
+
+            if(!bricks[i].isHit){
+                    //ball
+                if(checkCollision(ballX, ballY, ballWH, ballWH, bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height)){
+                    velX = - velX;
+                    bricks[i].isHit = true;
+                    break; //not check for aditional collitions.
+                }
+            }
+        }
+
+        ballY += velY; //if the collision succeeds, then change the movement of the ball
+
+        for(int i = 0; i < BRICKS; i++){
+
+            if(!bricks[i].isHit){
+                    //ball
+                if(checkCollision(ballX, ballY, ballWH, ballWH, bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height)){
+                    velY = - velY;
+                    bricks[i].isHit = true;
+                    break; //not check for aditional collitions.
+                }
+            }
+        }
 
         if( ballX < 0){
             velX = -velX;
@@ -145,22 +218,28 @@ int main (int argc, char* args[])
 
         glOrtho(0,widthScreen,heightScreen,0,-1,1); //set the matrix
 
+        //for rendering the image to the bar, you have to change the color to white 4 x 255
+
         drawingSquares(myX, myY, width, height, 0, 0, 0, 255); //bar created
 
         drawingSquares(ballX, ballY, ballWH, ballWH, 255, 0, 0, 255); //ball created
 
 
+
         for(int i = 0; i < BRICKS; i++){
 
+          if(!bricks[i].isHit){
             if(i < 9)
                 drawingSquares(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 0, 0, 255, 255);
             else if (i < 18)
               drawingSquares(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 255, 0, 0, 255);
             else if (i < 27)
-             drawingSquares(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 255, 165, 0, 0);
+             drawingSquares(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 255, 165, 0, 255);
             else
-             drawingSquares(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 242, 234, 5, 0);
+             drawingSquares(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 242, 234, 5, 255);
+          }
         }
+
         /* return to the screen */
         glPopMatrix();
         /* render */
