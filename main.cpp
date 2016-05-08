@@ -18,40 +18,6 @@ struct Brick
  bool isHit;
 };
 
-GLuint loadTexture(const std::string &fileName){
-    /* load image into sdl surface */
-    /*filename.c_str converts to string the file name */
-
-    SDL_Surface *image = IMG_Load(fileName.c_str() );
-
-    /*display format */
-
-    SDL_DisplayFormatAlpha(image);
-
-    /*texture */
-    unsigned object(0);
-
-
-    glGenTextures(1, &object);
-
-    glBindTexture(GL_TEXTURE_2D, object);
-
-    //create texture sdl surface (how the texture will behave)
-
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    /*creation of the texture sdl surface */
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image->w, image ->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image->pixels);
-
-    /*free surface */
-    SDL_FreeSurface(image);
-
-    return object;
-}
 
 
 int main (int argc, char* args[])
@@ -61,6 +27,9 @@ int main (int argc, char* args[])
     int widthScreen = 600;
     int heightScreen = 400;
     windowSettings(widthScreen, heightScreen);
+
+    /*count how many bricks were destroyed */
+    int destroyedBricks = 0;
 
     /* main loop */
     bool running = true;
@@ -85,8 +54,7 @@ int main (int argc, char* args[])
 
     bool left = false, right = false;
     //Brick elements
-    const static int BRICKS = 36; //global quantity of the bricks
-
+    const static int BRICKS = 1; //global quantity of the bricks
     Brick bricks[BRICKS];
 
 
@@ -105,13 +73,34 @@ int main (int argc, char* args[])
     }
 
     /*load the image 60 40  verify to add the alpha channel*/
-/*
+
+    unsigned int background_texture = 0;
+    background_texture = loadTexture("backgr.png");
+
     unsigned int pad_texture = 0;
-    pad_texture = loadTexture("bar.png");
+    pad_texture = loadTexture("ball.png");
 
-    std::cout << pad_texture << std::endl;
+    unsigned int bar_texture = 0;
+    bar_texture = loadTexture("bar.png");
 
-*/
+    unsigned int blueBrick_texture = 0;
+    blueBrick_texture = loadTexture("blueBrick.png");
+
+    unsigned int redBrick_texture = 0;
+    redBrick_texture = loadTexture("redBrick.png");
+
+    unsigned int orangeBrick_texture = 0;
+    orangeBrick_texture = loadTexture("orangeBrick.png");
+
+    unsigned int yellowBrick_texture = 0;
+    yellowBrick_texture = loadTexture("yellowBrick.png");
+
+
+
+
+    //std::cout << pad_texture << std::endl;
+
+
     /* main loop */
     while (running)
     {
@@ -171,6 +160,7 @@ int main (int argc, char* args[])
                 if(checkCollision(ballX, ballY, ballWH, ballWH, bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height)){
                     velX = - velX;
                     bricks[i].isHit = true;
+                    destroyedBricks += 1;
                     break; //not check for aditional collitions.
                 }
             }
@@ -185,6 +175,7 @@ int main (int argc, char* args[])
                 if(checkCollision(ballX, ballY, ballWH, ballWH, bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height)){
                     velY = - velY;
                     bricks[i].isHit = true;
+                    destroyedBricks += 1;
                     break; //not check for aditional collitions.
                 }
             }
@@ -205,9 +196,43 @@ int main (int argc, char* args[])
             velY = -velY;
             //running = false;
         }
+        else if (destroyedBricks == BRICKS){
+
+         destroyedBricks = 0;
+
+        /* Starting position of the ball */
+          ballX = 420;
+          ballY = 300;
+          ballWH = 25;
+
+          velY = -velY;
+
+          myX = 300; //starting x position of rectangle
+          myY = 370; //starting y position of rectangle
+          width = 80; //width of the rectangle
+          height = 20; //height of the rectangle
+
+          left = false,right = false; //Set the buttons back to false
+
+
+            //restart the bricks
+            for ( int n = 0; n < BRICKS; n++ )
+            {
+              bricks[n].isHit = false;
+            }
+        }
 
         if(checkCollision(ballX, ballY, ballWH, ballWH, myX, myY, width, height)){
             velY = -velY;
+
+            //check the middle of the ball
+            /*
+            float middleOfBall = ballX + ballWH/2;
+            middleOfBall = middleOfBall - myX; //subtracting the pad' position
+            middleOfBall = middleOfBall - 30;
+            middleOfBall = middleOfBall / 100;
+            velX = middleOfBall;
+            */
         }
 
         /*rendering to the screen */
@@ -220,9 +245,11 @@ int main (int argc, char* args[])
 
         //for rendering the image to the bar, you have to change the color to white 4 x 255
 
-        drawingSquares(myX, myY, width, height, 0, 0, 0, 255); //bar created
+        drawingSquaresWithImage(0, 0, widthScreen, heightScreen, 255, 255, 255, 255, background_texture);
 
-        drawingSquares(ballX, ballY, ballWH, ballWH, 255, 0, 0, 255); //ball created
+        drawingSquaresWithImage(myX, myY, width, height, 255, 255, 255, 255, bar_texture); //bar created
+
+        drawingSquaresWithImage(ballX, ballY, ballWH, ballWH, 255, 255, 255, 255, pad_texture); //ball created
 
 
 
@@ -230,13 +257,13 @@ int main (int argc, char* args[])
 
           if(!bricks[i].isHit){
             if(i < 9)
-                drawingSquares(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 0, 0, 255, 255);
+                drawingSquaresWithImage(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 255, 255, 255, 255, blueBrick_texture);
             else if (i < 18)
-              drawingSquares(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 255, 0, 0, 255);
+              drawingSquaresWithImage(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 255, 255, 255, 255, redBrick_texture);
             else if (i < 27)
-             drawingSquares(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 255, 165, 0, 255);
+             drawingSquaresWithImage(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 255, 255, 255, 255, orangeBrick_texture);
             else
-             drawingSquares(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 242, 234, 5, 255);
+             drawingSquaresWithImage(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 255, 255, 255, 255, yellowBrick_texture);
           }
         }
 

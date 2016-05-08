@@ -8,8 +8,6 @@
 void windowSettings(int width, int height){
     /*How many memory you provide to opengl */
 
-
-
     SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);

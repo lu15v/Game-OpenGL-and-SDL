@@ -1,5 +1,5 @@
 #include "functions.h"
-
+#include <string>
 
 bool  checkCollision(float Ax, float Ay, float Aw, float Ah, float Bx, float By, float Bw, float Bh)
 {
@@ -11,4 +11,5 @@ bool  checkCollision(float Ax, float Ay, float Aw, float Ah, float Bx, float By,
 
     return true;
 }
+
 
