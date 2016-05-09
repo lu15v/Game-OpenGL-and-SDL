@@ -38,6 +38,8 @@
 		<Unit filename="collisions.cpp" />
 		<Unit filename="functions.h" />
 		<Unit filename="main.cpp" />
+		<Unit filename="structs.h" />
+		<Unit filename="textures.cpp" />
 		<Unit filename="window.cpp" />
 		<Extensions>
 			<code_completion />

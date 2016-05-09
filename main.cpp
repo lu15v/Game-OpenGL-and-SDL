@@ -8,28 +8,30 @@
 #include "functions.h"
 #include <string>
 #include "SDL_image.h"
-
-struct Brick
-{
- float x;
- float y;
- float width;
- float height;
- bool isHit;
-};
-
+#include <windows.h>
+#include "structs.h"
 
 
 int main (int argc, char* args[])
 {
+
+
     SDL_Init(SDL_INIT_EVERYTHING); /*enable audio joystick everything */
 
-    int widthScreen = 600;
-    int heightScreen = 400;
+    int widthScreen = 650;
+    int heightScreen = 500;
+    int limitOfBall = 400;
     windowSettings(widthScreen, heightScreen);
+
 
     /*count how many bricks were destroyed */
     int destroyedBricks = 0;
+
+    /* total Score */
+    int score = 0;
+
+    /*lifes */
+    int lifes = 2;
 
     /* main loop */
     bool running = true;
@@ -42,6 +44,7 @@ int main (int argc, char* args[])
     float myY = 375;
     float width = 80;
     float height = 20;
+    float barVelocity = 0.2;
 
     /* the ball variables */
 
@@ -49,19 +52,51 @@ int main (int argc, char* args[])
     float ballY = 300;
     float ballWH = 25;
 
-    float velX = 0.06;
-    float velY = -0.06;
+    float velX = 0.1;
+    float velY = -0.1;
+
+    /* lifes */
+    const static int NOLIFES = 3;
+    Lifes tLifes[NOLIFES];
+
+
+    /* power up movement */
+    const static int TOTALPOWERUPS = 1;
+    PowerUp powerUp[TOTALPOWERUPS];
+
+    powerUp[0].x = widthScreen / 2;
+    powerUp[0].y = 120;
+    powerUp[0].width = 25;
+    powerUp[0].height = 25;
+    powerUp[0].isHit = false;
+
+    float puWH = 25;
+
+    float movY = -0.05;
 
     bool left = false, right = false;
     //Brick elements
-    const static int BRICKS = 1; //global quantity of the bricks
+    const static int BRICKS = 36; //global quantity of the bricks
     Brick bricks[BRICKS];
 
 
-    for (int i = 0, x = 4, y = 10; i < BRICKS; i++, x+= 66){
+    for (int i = 0, x = 4, y = 450; i < NOLIFES; i++, x+= 52){
+           if(x > 597){
+            x = 4;
+            y += 25;
+        }
+        tLifes[i].x = x;
+        tLifes[i].y = y;
+        tLifes[i].width = 40;
+        tLifes[i].height = 30;
+        tLifes[i].left = false;
+
+    }
+
+    for (int i = 0, x = 4, y = 10; i < BRICKS; i++, x+= 72){
 
         //for accommodate the bricks
-        if(x > 560){
+        if(x > 597){
             x = 4;
             y += 25;
         }
@@ -96,9 +131,14 @@ int main (int argc, char* args[])
     yellowBrick_texture = loadTexture("yellowBrick.png");
 
 
+    unsigned int gameOver_texture = 0;
+    gameOver_texture = loadTexture("gameOver.png");
 
+    unsigned int puSize_texture = 0;
+    puSize_texture = loadTexture("puSize.png");
 
-    //std::cout << pad_texture << std::endl;
+    unsigned int lifes_texture = 0;
+    lifes_texture = loadTexture("life.png");
 
 
     /* main loop */
@@ -111,6 +151,9 @@ int main (int argc, char* args[])
             /* where you find all the keys event... */
             if(event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE)
                 running = false;
+
+            if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_p)
+                 system("PAUSE");
 
             if(event.type == SDL_KEYDOWN){
 
@@ -135,10 +178,10 @@ int main (int argc, char* args[])
         //logic of the game
         //bar movement
         if (left == true){
-            myX -= 0.2;
+            myX -= barVelocity;
         }
         if (right == true){
-            myX += 0.2;
+            myX += barVelocity;
         }
 
         //avoid bar to get out of the screen
@@ -148,6 +191,19 @@ int main (int argc, char* args[])
         if (myX + width > widthScreen){
             myX = widthScreen - width;
         }
+
+        //power up logic
+        if(destroyedBricks > 2)
+            powerUp[0].y -= movY;
+
+        if(checkCollision(powerUp[0].x, powerUp[0].y, powerUp[0].width, powerUp[0].height, myX, myY, width, height)){
+            powerUp[0].isHit = true;
+            int i = 0;
+            width = 100;
+
+
+        }
+
 
         //ball logic
         ballX += velX;
@@ -161,6 +217,8 @@ int main (int argc, char* args[])
                     velX = - velX;
                     bricks[i].isHit = true;
                     destroyedBricks += 1;
+                    score += 10;
+                    //std::cout << score; //check the txt in bin
                     break; //not check for aditional collitions.
                 }
             }
@@ -176,6 +234,8 @@ int main (int argc, char* args[])
                     velY = - velY;
                     bricks[i].isHit = true;
                     destroyedBricks += 1;
+                    score += 10;
+                    //std::cout << score; //check the txt in bin
                     break; //not check for aditional collitions.
                 }
             }
@@ -192,11 +252,18 @@ int main (int argc, char* args[])
             velY = -velY;
         }
         //bottom of the screen the ball hit the bottom
-        else if (ballY + ballWH > heightScreen){
+        else if (ballY + ballWH > limitOfBall){
             velY = -velY;
+            tLifes[lifes].left = true;
+            lifes -= 1;
+            //std::cout << lifes;
             //running = false;
         }
+
+
         else if (destroyedBricks == BRICKS){
+
+
 
          destroyedBricks = 0;
 
@@ -220,19 +287,23 @@ int main (int argc, char* args[])
             {
               bricks[n].isHit = false;
             }
+
+
         }
 
         if(checkCollision(ballX, ballY, ballWH, ballWH, myX, myY, width, height)){
             velY = -velY;
-
+            velX = -velX - 0.05;
             //check the middle of the ball
-            /*
+/*
             float middleOfBall = ballX + ballWH/2;
             middleOfBall = middleOfBall - myX; //subtracting the pad' position
             middleOfBall = middleOfBall - 30;
             middleOfBall = middleOfBall / 100;
             velX = middleOfBall;
+
             */
+
         }
 
         /*rendering to the screen */
@@ -245,11 +316,16 @@ int main (int argc, char* args[])
 
         //for rendering the image to the bar, you have to change the color to white 4 x 255
 
-        drawingSquaresWithImage(0, 0, widthScreen, heightScreen, 255, 255, 255, 255, background_texture);
 
-        drawingSquaresWithImage(myX, myY, width, height, 255, 255, 255, 255, bar_texture); //bar created
+        if(lifes > -1){
+            drawingSquaresWithImage(0, 0, widthScreen, heightScreen, 255, 255, 255, 255, background_texture);
 
-        drawingSquaresWithImage(ballX, ballY, ballWH, ballWH, 255, 255, 255, 255, pad_texture); //ball created
+            drawingSquaresWithImage(myX, myY, width, height, 255, 255, 255, 255, bar_texture); //bar created
+
+            drawingSquaresWithImage(ballX, ballY, ballWH, ballWH, 255, 255, 255, 255, pad_texture); //ball created
+
+            if(destroyedBricks > 2 && !powerUp[0].isHit)
+                drawingSquaresWithImage(powerUp[0].x, powerUp[0].y, powerUp[0].width, powerUp[0].height, 255, 255, 255, 255, puSize_texture); //size Power Up created
 
 
 
@@ -264,8 +340,19 @@ int main (int argc, char* args[])
              drawingSquaresWithImage(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 255, 255, 255, 255, orangeBrick_texture);
             else
              drawingSquaresWithImage(bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height, 255, 255, 255, 255, yellowBrick_texture);
-          }
+            }
+         }
+
+         for(int i = 0; i < NOLIFES; i++){
+            if(!tLifes[i].left)
+            drawingSquaresWithImage(tLifes[i].x, tLifes[i].y, tLifes[i].width, tLifes[i].height, 255, 255, 255, 255, lifes_texture);
+         }
+
+        }else{
+            drawingSquaresWithImage(0, 0, widthScreen, heightScreen, 255, 255, 255, 255, gameOver_texture);
+
         }
+
 
         /* return to the screen */
         glPopMatrix();
