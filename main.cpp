@@ -45,13 +45,19 @@ int main (int argc, char* args[])
     /* timers for the powerUps */
     clock_t start;
     clock_t finish;
-    clock_t failedStart;
     /* positions of the bar */
     float myX = 300;
     float myY = 375;
     float width = 80;
     float height = 20;
     float barVelocity = 0.2;
+
+    /*positions of the bullet */
+    float bulletX = 325;
+    float bulletY = 375;
+    float bulletWidth = 30;
+    float bulletHeight = 50;
+    float bulletVelocity = 0.2;
 
     /* the ball variables */
 
@@ -61,27 +67,28 @@ int main (int argc, char* args[])
 
     float velX = 0.1;
     float velY = -0.1;
-
+    float limit = -1.10;
     /* lifes */
     const static int NOLIFES = 3;
     Lifes tLifes[NOLIFES];
 
     /* random variables */
-    int powerProbability, randomPower;
+    int powerProbability, randomPower, random;
 
     /* power up movement */
-    const static int TOTALPOWERUPS = 2;
+    const static int TOTALPOWERUPS = 6;
     PowerUp powerUp[TOTALPOWERUPS];
 
     /* enable power up */
     bool power;
     bool selected = true;
-
+    bool reversed = false;
+    bool bullet = false;
    // float puWH = 25;
     /*power up velocity */
     float movY = -0.05;
 
-    bool left = false, right = false;
+    bool left = false, right = false, up = false;
     //Brick elements
     const static int BRICKS = 36; //global quantity of the bricks
     Brick bricks[BRICKS];
@@ -162,6 +169,21 @@ int main (int argc, char* args[])
     lifes_texture = loadTexture("life.png");
 
 
+    unsigned int puLessSize_texture = 0;
+    puLessSize_texture = loadTexture("puLessSize.png");
+
+    unsigned int puReverse_texture = 0;
+    puReverse_texture = loadTexture("puReverse.png");
+
+    unsigned int puRandom_texture = 0;
+    puRandom_texture = loadTexture("puRandom.png");
+
+    unsigned int puBullets_texture = 0;
+    puBullets_texture = loadTexture("puBullets.png");
+
+    unsigned int bullet_texture = 0;
+    bullet_texture = loadTexture("bullet.png");
+
     /* main loop */
     while (running)
     {
@@ -180,11 +202,14 @@ int main (int argc, char* args[])
 
                 if(event.key.keysym.sym == SDLK_LEFT){
                     left = true;
+
                 }
                 else if(event.key.keysym.sym == SDLK_RIGHT){
                     right = true;
                 }
             }
+
+
 
             else if ( event.type == SDL_KEYUP){
 
@@ -194,23 +219,45 @@ int main (int argc, char* args[])
                 else if (event.key.keysym.sym == SDLK_RIGHT){
                     right = false;
                 }
+
             }
+            if(event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_UP){
+                up = true;
+            }
+
         }
         //logic of the game
         //bar movement
         if (left == true){
-            myX -= barVelocity;
+            if(!reversed){
+                myX -= barVelocity;
+                if(bulletY == 375)
+                    bulletX -= barVelocity;
+            }
+
+            else{
+                myX += barVelocity;
+            }
         }
         if (right == true){
-            myX += barVelocity;
+            if(!reversed){
+                myX += barVelocity;
+                if(bulletY == 375 )
+                    bulletX += barVelocity;
+            }
+            else{
+               myX -= barVelocity;
+            }
         }
 
         //avoid bar to get out of the screen
         if(myX < 0 ){
             myX = 0;
+            bulletX = myX + 25;
         }
         if (myX + width > widthScreen){
             myX = widthScreen - width;
+            bulletX = myX + 25;
         }
 
 
@@ -219,7 +266,8 @@ int main (int argc, char* args[])
         if(selected){
             srand((int)time(0));
             powerProbability = rand() % 100 + 1;
-            randomPower = rand() % 2;
+
+            randomPower = rand() % 6;
             if(powerProbability > 1){
                 power = true;
                 selected = false;
@@ -232,6 +280,9 @@ int main (int argc, char* args[])
             powerUp[randomPower].y -= movY;
         }
 
+        if(bullet && up)
+            bulletY -= bulletVelocity;
+
         if (powerUp[randomPower].y + powerUp[randomPower].height > limits)
             start = clock();
 
@@ -239,10 +290,21 @@ int main (int argc, char* args[])
             powerUp[randomPower].isHit = true;
 
             start = clock();
-            if(randomPower == 0)
+
+            if(randomPower == 4)
+                random = rand() % 4;
+            if(randomPower == 0 || randomPower == 4 && random == 0)
                 width = 120;
-            if(randomPower == 1)
-                barVelocity = 0.5;
+            if(randomPower == 1 || randomPower == 4 && random == 1)
+                barVelocity = 0.4;
+            if(randomPower == 2 || randomPower == 4 && random == 2)
+                width = 50;
+            if(randomPower == 3 || randomPower == 4 && random == 3)
+                reversed = true;
+            if(randomPower == 5)
+                bullet = true;
+
+
 
         }
 
@@ -252,16 +314,29 @@ int main (int argc, char* args[])
 
 
         if(((finish - start) / CLOCKS_PER_SEC) == 4){
-            if(randomPower == 0)
+            if(randomPower == 0 || randomPower == 2 || random == 0 || random == 2)
                 width = 80;
-            if(randomPower == 1)
+            if(randomPower == 1 || random == 1)
                 barVelocity = 0.2;
+            if(randomPower == 3 || random == 3)
+                reversed = false;
+            if(randomPower == 5){
+                bulletY = myY;
+                bulletX = myX + 25;
+                bullet = false;
+            }
+
              powerUp[randomPower].isHit = false;
              powerUp[randomPower].y = 120;
              power = false;
              selected = true;
         }
-
+        if (powerUp[randomPower].y + powerUp[randomPower].height > limits)
+        {
+            powerUp[randomPower].y = 120;
+            power = false;
+            selected = true;
+        }
 
 
 
@@ -281,6 +356,14 @@ int main (int argc, char* args[])
                     //std::cout << score; //check the txt in bin
                     break; //not check for aditional collitions.
                 }
+                if(checkCollision(bulletX, bulletY, bulletWidth, bulletHeight, bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height)){
+                velX = - velX;
+                bricks[i].isHit = true;
+                destroyedBricks += 1;
+                score += 10;
+                break; //not check for aditional collitions.
+                }
+
             }
         }
 
@@ -297,6 +380,13 @@ int main (int argc, char* args[])
                     score += 10;
                     //std::cout << score; //check the txt in bin
                     break; //not check for aditional collitions.
+                }
+                if(checkCollision(bulletX, bulletY, bulletWidth, bulletHeight, bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height)){
+                velX = - velX;
+                bricks[i].isHit = true;
+                destroyedBricks += 1;
+                score += 10;
+                break; //not check for aditional collitions.
                 }
             }
         }
@@ -319,10 +409,10 @@ int main (int argc, char* args[])
             //std::cout << lifes;
             //running = false;
         }
-
+        else if (bulletX + bulletY < 0)
+            up = false;
 
         else if (destroyedBricks == BRICKS){
-
 
 
          destroyedBricks = 0;
@@ -335,11 +425,17 @@ int main (int argc, char* args[])
           velY = -velY;
 
           myX = 300; //starting x position of rectangle
-          myY = 370; //starting y position of rectangle
+          myY = 375; //starting y position of rectangle
           width = 80; //width of the rectangle
           height = 20; //height of the rectangle
 
+          bulletY = myY;
+          bulletX = myX + 25;
+          up = false;
+
+
           left = false,right = false; //Set the buttons back to false
+
 
 
             //restart the bricks
@@ -348,7 +444,7 @@ int main (int argc, char* args[])
               bricks[n].isHit = false;
             }
 
-
+            Sleep(3000);
         }
 
         if(checkCollision(ballX, ballY, ballWH, ballWH, myX, myY, width, height)){
@@ -367,7 +463,7 @@ int main (int argc, char* args[])
         }
 
          /*avoids that the ball reaches unplayable velocities */
-        if(velX < -1.10)
+        if(velX < limit)
             velX = -0.1;
 
 
@@ -389,11 +485,23 @@ int main (int argc, char* args[])
 
             drawingSquaresWithImage(ballX, ballY, ballWH, ballWH, 255, 255, 255, 255, pad_texture); //ball created
 
+            if(bullet)
+                drawingSquaresWithImage(bulletX, bulletY, bulletWidth, bulletHeight, 255, 255, 255, 255, bullet_texture);
+
+
             if(power && !powerUp[randomPower].isHit && powerUp[randomPower].y + powerUp[randomPower].height < limits ){
                 if(randomPower == 0)
-                    drawingSquaresWithImage(powerUp[0].x, powerUp[0].y, powerUp[0].width, powerUp[0].height, 255, 255, 255, 255, puSize_texture); //size Power Up created
+                    drawingSquaresWithImage(powerUp[randomPower].x, powerUp[randomPower].y, powerUp[randomPower].width, powerUp[randomPower].height, 255, 255, 255, 255, puSize_texture); //size Power Up created
                 else if(randomPower == 1)
-                    drawingSquaresWithImage(powerUp[1].x, powerUp[1].y, powerUp[1].width, powerUp[1].height, 255, 255, 255, 255, puVel_texture);
+                    drawingSquaresWithImage(powerUp[randomPower].x, powerUp[randomPower].y, powerUp[randomPower].width, powerUp[randomPower].height, 255, 255, 255, 255, puVel_texture);
+                else if(randomPower == 2)
+                    drawingSquaresWithImage(powerUp[randomPower].x, powerUp[randomPower].y, powerUp[randomPower].width, powerUp[randomPower].height, 255, 255, 255, 255, puLessSize_texture);
+                else if(randomPower == 3)
+                    drawingSquaresWithImage(powerUp[randomPower].x, powerUp[randomPower].y, powerUp[randomPower].width, powerUp[randomPower].height, 255, 255, 255, 255, puReverse_texture);
+                else if(randomPower == 4)
+                    drawingSquaresWithImage(powerUp[randomPower].x, powerUp[randomPower].y, powerUp[randomPower].width, powerUp[randomPower].height, 255, 255, 255, 255, puRandom_texture);
+                else if(randomPower == 5)
+                    drawingSquaresWithImage(powerUp[randomPower].x, powerUp[randomPower].y, powerUp[randomPower].width, powerUp[randomPower].height, 255, 255, 255, 255, puBullets_texture);
             }
 
 
