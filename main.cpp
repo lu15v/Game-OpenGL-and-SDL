@@ -1,4 +1,4 @@
-
+// 37 y 315
 /*
 -lmingw32 -lSDLmain -lSDL -lopengl32 - -lSDL_image
 */
@@ -8,9 +8,10 @@
 #include "functions.h"
 #include <string>
 #include "SDL_image.h"
-#include <windows.h>
 #include "structs.h"
-
+#include <windows.h>
+#include <time.h>
+#include <ctime>
 
 int main (int argc, char* args[])
 {
@@ -20,18 +21,20 @@ int main (int argc, char* args[])
 
     int widthScreen = 650;
     int heightScreen = 500;
-    int limitOfBall = 400;
+    int limits = 400;
     windowSettings(widthScreen, heightScreen);
 
 
     /*count how many bricks were destroyed */
     int destroyedBricks = 0;
 
+   // int bricksForPowerUps = 0;
+
     /* total Score */
     int score = 0;
 
     /*lifes */
-    int lifes = 2;
+    int lifes = 999;
 
     /* main loop */
     bool running = true;
@@ -39,6 +42,10 @@ int main (int argc, char* args[])
     /* handling events */
     SDL_Event event;
 
+    /* timers for the powerUps */
+    clock_t start;
+    clock_t finish;
+    clock_t failedStart;
     /* positions of the bar */
     float myX = 300;
     float myY = 375;
@@ -59,25 +66,36 @@ int main (int argc, char* args[])
     const static int NOLIFES = 3;
     Lifes tLifes[NOLIFES];
 
+    /* random variables */
+    int powerProbability, randomPower;
 
     /* power up movement */
-    const static int TOTALPOWERUPS = 1;
+    const static int TOTALPOWERUPS = 2;
     PowerUp powerUp[TOTALPOWERUPS];
 
-    powerUp[0].x = widthScreen / 2;
-    powerUp[0].y = 120;
-    powerUp[0].width = 25;
-    powerUp[0].height = 25;
-    powerUp[0].isHit = false;
+    /* enable power up */
+    bool power;
+    bool selected = true;
 
-    float puWH = 25;
-
+   // float puWH = 25;
+    /*power up velocity */
     float movY = -0.05;
 
     bool left = false, right = false;
     //Brick elements
     const static int BRICKS = 36; //global quantity of the bricks
     Brick bricks[BRICKS];
+
+
+
+    for(int i = 0; i < TOTALPOWERUPS; i++ ){
+        powerUp[i].x = widthScreen / 2;
+        powerUp[i].y = 120;
+        powerUp[i].width = 25;
+        powerUp[i].height = 25;
+        powerUp[i].isHit = false;
+
+    }
 
 
     for (int i = 0, x = 4, y = 450; i < NOLIFES; i++, x+= 52){
@@ -137,6 +155,9 @@ int main (int argc, char* args[])
     unsigned int puSize_texture = 0;
     puSize_texture = loadTexture("puSize.png");
 
+    unsigned int puVel_texture = 0;
+    puVel_texture  = loadTexture("puVelo.png");
+
     unsigned int lifes_texture = 0;
     lifes_texture = loadTexture("life.png");
 
@@ -192,17 +213,56 @@ int main (int argc, char* args[])
             myX = widthScreen - width;
         }
 
+
         //power up logic
-        if(destroyedBricks > 2)
-            powerUp[0].y -= movY;
 
-        if(checkCollision(powerUp[0].x, powerUp[0].y, powerUp[0].width, powerUp[0].height, myX, myY, width, height)){
-            powerUp[0].isHit = true;
-            int i = 0;
-            width = 100;
-
+        if(selected){
+            srand((int)time(0));
+            powerProbability = rand() % 100 + 1;
+            randomPower = rand() % 2;
+            if(powerProbability > 1){
+                power = true;
+                selected = false;
+            }
 
         }
+
+
+        if(power && !powerUp[randomPower].isHit){
+            powerUp[randomPower].y -= movY;
+        }
+
+        if (powerUp[randomPower].y + powerUp[randomPower].height > limits)
+            start = clock();
+
+        if(!powerUp[randomPower].isHit && checkCollision(powerUp[randomPower].x, powerUp[randomPower].y, powerUp[randomPower].width, powerUp[randomPower].height, myX, myY, width, height)){
+            powerUp[randomPower].isHit = true;
+
+            start = clock();
+            if(randomPower == 0)
+                width = 120;
+            if(randomPower == 1)
+                barVelocity = 0.5;
+
+        }
+
+
+
+        finish = clock();
+
+
+        if(((finish - start) / CLOCKS_PER_SEC) == 4){
+            if(randomPower == 0)
+                width = 80;
+            if(randomPower == 1)
+                barVelocity = 0.2;
+             powerUp[randomPower].isHit = false;
+             powerUp[randomPower].y = 120;
+             power = false;
+             selected = true;
+        }
+
+
 
 
         //ball logic
@@ -252,9 +312,9 @@ int main (int argc, char* args[])
             velY = -velY;
         }
         //bottom of the screen the ball hit the bottom
-        else if (ballY + ballWH > limitOfBall){
+        else if (ballY + ballWH > limits){
             velY = -velY;
-            tLifes[lifes].left = true;
+          ////  tLifes[lifes].left = true;
             lifes -= 1;
             //std::cout << lifes;
             //running = false;
@@ -306,6 +366,11 @@ int main (int argc, char* args[])
 
         }
 
+         /*avoids that the ball reaches unplayable velocities */
+        if(velX < -1.10)
+            velX = -0.1;
+
+
         /*rendering to the screen */
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -324,8 +389,12 @@ int main (int argc, char* args[])
 
             drawingSquaresWithImage(ballX, ballY, ballWH, ballWH, 255, 255, 255, 255, pad_texture); //ball created
 
-            if(destroyedBricks > 2 && !powerUp[0].isHit)
-                drawingSquaresWithImage(powerUp[0].x, powerUp[0].y, powerUp[0].width, powerUp[0].height, 255, 255, 255, 255, puSize_texture); //size Power Up created
+            if(power && !powerUp[randomPower].isHit && powerUp[randomPower].y + powerUp[randomPower].height < limits ){
+                if(randomPower == 0)
+                    drawingSquaresWithImage(powerUp[0].x, powerUp[0].y, powerUp[0].width, powerUp[0].height, 255, 255, 255, 255, puSize_texture); //size Power Up created
+                else if(randomPower == 1)
+                    drawingSquaresWithImage(powerUp[1].x, powerUp[1].y, powerUp[1].width, powerUp[1].height, 255, 255, 255, 255, puVel_texture);
+            }
 
 
 
