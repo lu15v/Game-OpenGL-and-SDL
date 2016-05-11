@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1462888193 source:c:\users\lu15\documents\itesm\graficas\gameproject\main.cpp
+1462955758 source:c:\users\lu15\documents\itesm\graficas\gameproject\main.cpp
 	"SDL.h"
 	"SDL_opengl.h"
 	<iostream>
@@ -10,8 +10,11 @@
 	<windows.h>
 	<time.h>
 	<ctime>
+	"textureVariables.h"
+	<SDL_image.h>
+	<SDL_ttf.h>
 
-1462857546 c:\users\lu15\documents\itesm\graficas\gameproject\functions.h
+1462933898 c:\users\lu15\documents\itesm\graficas\gameproject\functions.h
 	"SDL.h"
 	"SDL_opengl.h"
 	<string>
@@ -43,5 +46,23 @@
 	<string>
 	"SDL_image.h"
 
-1462882932 c:\users\lu15\documents\itesm\graficas\gameproject\structs.h
+1462943398 c:\users\lu15\documents\itesm\graficas\gameproject\structs.h
+
+1462949167 c:\users\lu15\documents\itesm\graficas\gameproject\texturevariables.h
+	"functions.h"
+
+1462936891 source:c:\users\lu15\documents\itesm\graficas\gameproject\score.cpp
+	"SDL.h"
+	"SDL_opengl.h"
+	<iostream>
+	"functions.h"
+	<string>
+	"SDL_image.h"
+	"structs.h"
+	<windows.h>
+	<time.h>
+	<ctime>
+	"textureVariables.h"
+	<SDL_image.h>
+	<SDL_ttf.h>
 

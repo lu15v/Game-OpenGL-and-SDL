@@ -39,6 +39,7 @@
 		<Unit filename="functions.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="structs.h" />
+		<Unit filename="textureVariables.h" />
 		<Unit filename="textures.cpp" />
 		<Unit filename="window.cpp" />
 		<Extensions>

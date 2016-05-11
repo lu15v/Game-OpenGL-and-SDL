@@ -12,6 +12,12 @@
 #include <windows.h>
 #include <time.h>
 #include <ctime>
+#include "textureVariables.h"
+#include <SDL_image.h>
+#include <SDL_ttf.h>
+
+
+
 
 int main (int argc, char* args[])
 {
@@ -28,13 +34,18 @@ int main (int argc, char* args[])
     /*count how many bricks were destroyed */
     int destroyedBricks = 0;
 
-   // int bricksForPowerUps = 0;
-
     /* total Score */
     int score = 0;
+    int indexScore = 10;
+    int firstTwoDigits = 1;
+    int firstThreeDigits = 1;
 
+    int firstTwoDigitsFor3 = 0;
+    int indexScoreFor3 = 100;
+    /*level */
+    int level = 1;
     /*lifes */
-    int lifes = 999;
+    int lifes = 3;
 
     /* main loop */
     bool running = true;
@@ -45,6 +56,11 @@ int main (int argc, char* args[])
     /* timers for the powerUps */
     clock_t start;
     clock_t finish;
+    clock_t startFail;
+    clock_t finishFail;
+
+    bool failedToTake = true;
+
     /* positions of the bar */
     float myX = 300;
     float myY = 375;
@@ -67,9 +83,10 @@ int main (int argc, char* args[])
 
     float velX = 0.1;
     float velY = -0.1;
-    float limit = -1.10;
+    float limit = -0.5;
+
     /* lifes */
-    const static int NOLIFES = 3;
+    const static int NOLIFES = 4;
     Lifes tLifes[NOLIFES];
 
     /* random variables */
@@ -84,14 +101,45 @@ int main (int argc, char* args[])
     bool selected = true;
     bool reversed = false;
     bool bullet = false;
-   // float puWH = 25;
+
     /*power up velocity */
     float movY = -0.05;
+
 
     bool left = false, right = false, up = false;
     //Brick elements
     const static int BRICKS = 36; //global quantity of the bricks
     Brick bricks[BRICKS];
+
+    /*struct for the score */
+    const static int NUMBERS = 150;
+    const static int LEVELS = 100;
+    Numbers numbers[NUMBERS];
+    Numbers numbersL[LEVELS];
+
+    /*score & level variables */
+    int scoreX = 290;
+    int slY = 450;
+    int slWidth = 80;
+    int slHeight = 25;
+
+    int levelX = 500;
+
+
+    for(int i = 0; i < LEVELS; i++){
+        numbersL[i].x = 380;
+        numbersL[i].y = 445;
+        numbersL[i].width = 25;
+        numbersL[i].height = 30;
+    }
+
+
+    for(int i = 0; i < NUMBERS; i++){
+        numbers[i].x = 380;
+        numbers[i].y = 445;
+        numbers[i].width = 25;
+        numbers[i].height = 30;
+    }
 
 
 
@@ -118,6 +166,8 @@ int main (int argc, char* args[])
 
     }
 
+
+
     for (int i = 0, x = 4, y = 10; i < BRICKS; i++, x+= 72){
 
         //for accommodate the bricks
@@ -134,98 +184,76 @@ int main (int argc, char* args[])
 
     /*load the image 60 40  verify to add the alpha channel*/
 
-    unsigned int background_texture = 0;
+
     background_texture = loadTexture("backgr.png");
 
-    unsigned int pad_texture = 0;
     pad_texture = loadTexture("ball.png");
 
-    unsigned int bar_texture = 0;
+
     bar_texture = loadTexture("bar.png");
 
-    unsigned int blueBrick_texture = 0;
+
     blueBrick_texture = loadTexture("blueBrick.png");
-
-    unsigned int redBrick_texture = 0;
     redBrick_texture = loadTexture("redBrick.png");
-
-    unsigned int orangeBrick_texture = 0;
     orangeBrick_texture = loadTexture("orangeBrick.png");
-
-    unsigned int yellowBrick_texture = 0;
     yellowBrick_texture = loadTexture("yellowBrick.png");
 
 
-    unsigned int gameOver_texture = 0;
     gameOver_texture = loadTexture("gameOver.png");
-
-    unsigned int puSize_texture = 0;
-    puSize_texture = loadTexture("puSize.png");
-
-    unsigned int puVel_texture = 0;
-    puVel_texture  = loadTexture("puVelo.png");
-
-    unsigned int lifes_texture = 0;
     lifes_texture = loadTexture("life.png");
 
 
-    unsigned int puLessSize_texture = 0;
+      /*power ups textures */
+    puSize_texture = loadTexture("puSize.png");
+    puVel_texture  = loadTexture("puVelo.png");
     puLessSize_texture = loadTexture("puLessSize.png");
-
-    unsigned int puReverse_texture = 0;
     puReverse_texture = loadTexture("puReverse.png");
-
-    unsigned int puRandom_texture = 0;
     puRandom_texture = loadTexture("puRandom.png");
-
-    unsigned int puBullets_texture = 0;
     puBullets_texture = loadTexture("puBullets.png");
 
-    unsigned int bullet_texture = 0;
     bullet_texture = loadTexture("bullet.png");
+
+
+    /*numbers textures */
+
+    zero_texture = loadTexture("0.png");
+    one_texture = loadTexture("1.png");
+    two_texture = loadTexture("2.png");
+    three_texture = loadTexture("3.png");
+    four_texture = loadTexture("4.png");
+    five_texture = loadTexture("5.png");
+    six_texture = loadTexture("6.png");
+    seven_texture = loadTexture("7.png");
+    eight_texture = loadTexture("8.png");
+    nine_texture = loadTexture("9.png");
+
+    score_texture = loadTexture("score.png");
+    level_texture = loadTexture("level.png");
 
     /* main loop */
     while (running)
     {
         /* takes events for the event stack */
         while (SDL_PollEvent(&event)){
-            if( event.type == SDL_QUIT)
-                running = false;
+            if( event.type == SDL_QUIT) running = false;
+
             /* where you find all the keys event... */
-            if(event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE)
-                running = false;
-
-            if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_p)
-                 system("PAUSE");
-
+            if(event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE) running = false;
             if(event.type == SDL_KEYDOWN){
+                if(event.key.keysym.sym == SDLK_LEFT) left = true;
+                else if(event.key.keysym.sym == SDLK_RIGHT) right = true;
 
-                if(event.key.keysym.sym == SDLK_LEFT){
-                    left = true;
-
-                }
-                else if(event.key.keysym.sym == SDLK_RIGHT){
-                    right = true;
-                }
             }
-
-
 
             else if ( event.type == SDL_KEYUP){
 
-                if (event.key.keysym.sym == SDLK_LEFT){
-                    left = false;
-                }
-                else if (event.key.keysym.sym == SDLK_RIGHT){
-                    right = false;
-                }
-
+                if (event.key.keysym.sym == SDLK_LEFT) left = false;
+                else if (event.key.keysym.sym == SDLK_RIGHT) right = false;
+                else if(event.key.keysym.sym == SDLK_p) up = false;
             }
-            if(event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_UP){
-                up = true;
-            }
-
+            if(event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_UP) up = true;
         }
+
         //logic of the game
         //bar movement
         if (left == true){
@@ -283,8 +311,6 @@ int main (int argc, char* args[])
         if(bullet && up)
             bulletY -= bulletVelocity;
 
-        if (powerUp[randomPower].y + powerUp[randomPower].height > limits)
-            start = clock();
 
         if(!powerUp[randomPower].isHit && checkCollision(powerUp[randomPower].x, powerUp[randomPower].y, powerUp[randomPower].width, powerUp[randomPower].height, myX, myY, width, height)){
             powerUp[randomPower].isHit = true;
@@ -293,25 +319,26 @@ int main (int argc, char* args[])
 
             if(randomPower == 4)
                 random = rand() % 4;
-            if(randomPower == 0 || randomPower == 4 && random == 0)
+            if(randomPower == 0 || (randomPower == 4 && random == 0))
                 width = 120;
-            if(randomPower == 1 || randomPower == 4 && random == 1)
+            if(randomPower == 1 || (randomPower == 4 && random == 1))
                 barVelocity = 0.4;
-            if(randomPower == 2 || randomPower == 4 && random == 2)
+            if(randomPower == 2 || (randomPower == 4 && random == 2))
                 width = 50;
-            if(randomPower == 3 || randomPower == 4 && random == 3)
+            if(randomPower == 3 || (randomPower == 4 && random == 3))
                 reversed = true;
             if(randomPower == 5)
                 bullet = true;
 
-
-
+        }
+        else if(failedToTake && powerUp[randomPower].y + powerUp[randomPower].height > limits){
+            std::cout << "wtf";
+            startFail = clock();
+            failedToTake = false;
         }
 
-
-
+        finishFail = clock();
         finish = clock();
-
 
         if(((finish - start) / CLOCKS_PER_SEC) == 4){
             if(randomPower == 0 || randomPower == 2 || random == 0 || random == 2)
@@ -331,11 +358,12 @@ int main (int argc, char* args[])
              power = false;
              selected = true;
         }
-        if (powerUp[randomPower].y + powerUp[randomPower].height > limits)
+        if (((finishFail - startFail) / CLOCKS_PER_SEC) == 4)
         {
             powerUp[randomPower].y = 120;
             power = false;
             selected = true;
+            failedToTake = true;
         }
 
 
@@ -352,15 +380,14 @@ int main (int argc, char* args[])
                     velX = - velX;
                     bricks[i].isHit = true;
                     destroyedBricks += 1;
-                    score += 10;
+                    ++score;
                     //std::cout << score; //check the txt in bin
                     break; //not check for aditional collitions.
                 }
                 if(checkCollision(bulletX, bulletY, bulletWidth, bulletHeight, bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height)){
-                velX = - velX;
                 bricks[i].isHit = true;
                 destroyedBricks += 1;
-                score += 10;
+                ++score;
                 break; //not check for aditional collitions.
                 }
 
@@ -377,15 +404,14 @@ int main (int argc, char* args[])
                     velY = - velY;
                     bricks[i].isHit = true;
                     destroyedBricks += 1;
-                    score += 10;
+                    ++score;
                     //std::cout << score; //check the txt in bin
                     break; //not check for aditional collitions.
                 }
                 if(checkCollision(bulletX, bulletY, bulletWidth, bulletHeight, bricks[i].x, bricks[i].y, bricks[i].width, bricks[i].height)){
-                velX = - velX;
                 bricks[i].isHit = true;
                 destroyedBricks += 1;
-                score += 10;
+                ++score;
                 break; //not check for aditional collitions.
                 }
             }
@@ -404,7 +430,7 @@ int main (int argc, char* args[])
         //bottom of the screen the ball hit the bottom
         else if (ballY + ballWH > limits){
             velY = -velY;
-          ////  tLifes[lifes].left = true;
+            tLifes[lifes].left = true;
             lifes -= 1;
             //std::cout << lifes;
             //running = false;
@@ -414,9 +440,9 @@ int main (int argc, char* args[])
 
         else if (destroyedBricks == BRICKS){
 
-
+         level++;
          destroyedBricks = 0;
-
+         limit += -0.1;
         /* Starting position of the ball */
           ballX = 420;
           ballY = 300;
@@ -465,7 +491,8 @@ int main (int argc, char* args[])
          /*avoids that the ball reaches unplayable velocities */
         if(velX < limit)
             velX = -0.1;
-
+        if(velY < limit)
+            velY = -0.1;
 
         /*rendering to the screen */
         glClear(GL_COLOR_BUFFER_BIT);
@@ -484,6 +511,13 @@ int main (int argc, char* args[])
             drawingSquaresWithImage(myX, myY, width, height, 255, 255, 255, 255, bar_texture); //bar created
 
             drawingSquaresWithImage(ballX, ballY, ballWH, ballWH, 255, 255, 255, 255, pad_texture); //ball created
+
+            drawingSquaresWithImage(scoreX, slY, slWidth, slHeight, 255, 255, 255, 255, score_texture);
+            drawingSquaresWithImage(levelX, slY, slWidth, slHeight, 255, 255, 255, 255, level_texture);
+
+            drawingSquaresWithImage(levelX + 80, numbersL[score].y, numbersL[score].width, numbersL[score].height, 255, 255, 255, 255, selectTextureNumber(level));
+
+
 
             if(bullet)
                 drawingSquaresWithImage(bulletX, bulletY, bulletWidth, bulletHeight, 255, 255, 255, 255, bullet_texture);
@@ -506,6 +540,7 @@ int main (int argc, char* args[])
 
 
 
+
         for(int i = 0; i < BRICKS; i++){
 
           if(!bricks[i].isHit){
@@ -522,8 +557,34 @@ int main (int argc, char* args[])
 
          for(int i = 0; i < NOLIFES; i++){
             if(!tLifes[i].left)
-            drawingSquaresWithImage(tLifes[i].x, tLifes[i].y, tLifes[i].width, tLifes[i].height, 255, 255, 255, 255, lifes_texture);
+                drawingSquaresWithImage(tLifes[i].x, tLifes[i].y, tLifes[i].width, tLifes[i].height, 255, 255, 255, 255, lifes_texture);
          }
+
+            if(score >= 0 && score <= 9){
+                drawingSquaresWithImage(numbers[score].x, numbers[score].y, numbers[score].width, numbers[score].height, 255, 255, 255, 255, selectTextureNumber(score));
+            }
+            else if (score >= 10 && score <= 99){
+                drawingSquaresWithImage(numbers[score].x, numbers[score].y, numbers[score].width, numbers[score].height, 255, 255, 255, 255, selectTextureNumber(firstTwoDigits));
+                drawingSquaresWithImage(410, numbers[score].y, numbers[score].width, numbers[score].height, 255, 255, 255, 255, selectTextureNumber(score - indexScore));
+
+                if(score - indexScore == 10){
+                    indexScore += 10;
+                    ++firstTwoDigits;
+                }
+
+            }
+            else if (score >= 100 && score <= 150){
+
+                drawingSquaresWithImage(numbers[score].x, numbers[score].y, numbers[score].width, numbers[score].height, 255, 255, 255, 255, selectTextureNumber(firstThreeDigits));
+                drawingSquaresWithImage(410, numbers[score].y, numbers[score].width, numbers[score].height, 255, 255, 255, 255, selectTextureNumber(firstTwoDigitsFor3));
+                drawingSquaresWithImage(435, numbers[score].y, numbers[score].width, numbers[score].height, 255, 255, 255, 255, selectTextureNumber(score - indexScoreFor3));
+
+                if(score - indexScoreFor3 == 10){
+                    indexScoreFor3 += 10;
+                    ++firstTwoDigitsFor3;
+                }
+            }
+
 
         }else{
             drawingSquaresWithImage(0, 0, widthScreen, heightScreen, 255, 255, 255, 255, gameOver_texture);
@@ -538,9 +599,8 @@ int main (int argc, char* args[])
     }
 
 
-
-
     SDL_Quit();
 
     return 0;
 }
+

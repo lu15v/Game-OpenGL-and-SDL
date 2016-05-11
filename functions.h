@@ -13,3 +13,6 @@ bool  checkCollision(float Ax, float Ay, float Aw, float Ah, float Bx, float By,
 GLuint loadTexture(const std::string &fileName);
 
 int timeLaps(int laps);
+
+
+unsigned int selectTextureNumber(int select);
